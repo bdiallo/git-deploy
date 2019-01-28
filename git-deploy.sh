@@ -8,9 +8,10 @@ info(){
   echo -e "* \033[1m""$@""\033[0m"
 }
 
-REMOTE=${1:-origin} # 1st argument or default to remote origin
+# set variables from parameters
+REMOTE_LOCAL_NAME=${1:-origin} # 1st argument or default to remote origin
 ENV=${2:-staging}   # 2nd argument or default to staging
-
+REMOTE_SERVER_NAME="origin" # name of the git remote on deployed server
 
 # If you need to run local scripts before deployment (knock, for example)
 if [ -f __scripts/deploy_before ]; then
@@ -19,14 +20,14 @@ if [ -f __scripts/deploy_before ]; then
 fi
 
 BRANCH=`git branch 2> /dev/null | sed -n '/^\*/s/^\* //p'` # local branch to send to REMOTE
-REMOTE_URL=`git config --get remote.$REMOTE.url`           # remote url
+REMOTE_URL=`git config --get remote.$REMOTE_LOCAL_NAME.url`           # remote url
 HOST=${REMOTE_URL%%:*}                                     # HOST=user@remote_server
 GIT_DIR=${REMOTE_URL#*:}                                   # bare repository location on REMOTE
 ENV_DIR="${GIT_DIR%/*}"/$ENV                               # project env dir on REMOTE
 
 
-info "Sending $BRANCH"
-git push $REMOTE HEAD
+info "Sending branch $BRANCH"
+git push $REMOTE_LOCAL_NAME HEAD
 
 # ssh to HOST and execute all commands between ""
 ssh -T $HOST "
@@ -35,7 +36,7 @@ ssh -T $HOST "
 set -e
 
 cd $ENV_DIR
-git fetch $REMOTE
+git fetch $REMOTE_SERVER_NAME
 
 CURRENT_BRANCH=\`git branch 2> /dev/null | sed -n '/^\*/s/^\* //p'\`
 (git branch 2> /dev/null | grep -n '^  $BRANCH') && HAS_BRANCH=1 || HAS_BRANCH=0
@@ -46,7 +47,7 @@ if [ $BRANCH != \$CURRENT_BRANCH ]; then
   # Create remote tracked branch
   if [ \$HAS_BRANCH != 1 ]; then
     echo '* Creating $BRANCH branch in $ENV'
-    git checkout -t $REMOTE/$BRANCH
+    git checkout -t $REMOTE_SERVER_NAME/$BRANCH
 
   # Switch to it
   else
@@ -60,7 +61,7 @@ if [ $BRANCH != \$CURRENT_BRANCH ]; then
 # Pull
 else
   echo '* Pulling $BRANCH in $ENV'
-  git merge $REMOTE/$BRANCH --ff-only
+  git merge $REMOTE_SERVER_NAME/$BRANCH --ff-only
 fi
 "
 
@@ -79,6 +80,6 @@ fi
 
 info "Tag $ENV"
 git tag -f $ENV
-git push -f $REMOTE $ENV
+git push -f $REMOTE_LOCAL_NAME HEAD
 
 echo "Oh yeah! 👍"
