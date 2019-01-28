@@ -1,6 +1,6 @@
 #!/bin/bash
 # Git push then pull over ssh
-# https://github.com/sunny/git-deploy
+# Script based on https://github.com/sunny/git-deploy
 
 set -e
 
@@ -8,26 +8,30 @@ info(){
   echo -e "* \033[1m""$@""\033[0m"
 }
 
-REMOTE=${GIT_DEPLOY_REMOTE:-origin} # default remote is called "origin"
-ENV=${1:-dev} # first argument or default to dev
+REMOTE=${1:-origin} # 1st argument or default to remote origin
+ENV=${2:-staging}   # 2nd argument or default to staging
 
-# For local scripts before deploy (knock, for example)
+
+# If you need to run local scripts before deployment (knock, for example)
 if [ -f __scripts/deploy_before ]; then
   info "__scripts/deploy_before $ENV"
   __scripts/deploy_before "$ENV"
 fi
 
-BRANCH=`git branch 2> /dev/null | sed -n '/^\*/s/^\* //p'`
-REMOTE_URL=`git config --get remote.$REMOTE.url`
-HOST=${REMOTE_URL%%:*}
-DIR=${REMOTE_URL#*:}
-ENV_DIR="${DIR%/*}"/$ENV
+BRANCH=`git branch 2> /dev/null | sed -n '/^\*/s/^\* //p'` # local branch to send to REMOTE
+REMOTE_URL=`git config --get remote.$REMOTE.url`           # remote url
+HOST=${REMOTE_URL%%:*}                                     # HOST=user@remote_server
+GIT_DIR=${REMOTE_URL#*:}                                   # bare repository location on REMOTE
+ENV_DIR="${GIT_DIR%/*}"/$ENV                               # project env dir on REMOTE
+
 
 info "Sending $BRANCH"
 git push $REMOTE HEAD
 
+# ssh to HOST and execute all commands between ""
 ssh -T $HOST "
 
+# Force your script to exit on error from where the 1st error occurred
 set -e
 
 cd $ENV_DIR
@@ -50,7 +54,7 @@ if [ $BRANCH != \$CURRENT_BRANCH ]; then
     git checkout $BRANCH --
   fi
 
-  # Launch post-merge
+  # Launch post-merge if file .git/hooks/post-merge is executable
   [ -x .git/hooks/post-merge ] && .git/hooks/post-merge
 
 # Pull
@@ -77,4 +81,4 @@ info "Tag $ENV"
 git tag -f $ENV
 git push -f $REMOTE $ENV
 
-echo "👍"
+echo "Oh yeah! 👍"

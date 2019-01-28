@@ -3,22 +3,22 @@ $ git deploy
 
 Git push then pull over ssh.
 
-How
+Usage
 ---
 
-Supposing you have a git remote over SSH
-(for example : `user@example.org:thatproject/origin.git`)
+Supposing you have a git remote over SSH, called origin
+(for example : `user@example.org:thatproject/project_bare_repo.git`)
 with these directories:
 
-    thatproject/origin.git
+    thatproject/project_bare_repo.git
     thatproject/dev/.git
     thatproject/prod/.git
 
 This script will let you push and pull it in `dev/` and `prod/`, just by calling locally:
 
 ```sh
-$ git deploy dev
-$ git deploy prod
+$ git deploy origin dev
+$ git deploy origin prod
 ```
 
 
@@ -28,7 +28,7 @@ Install
 Make sure the `~/bin` folder exists and is in your `$PATH`, then:
 
 ```sh
-$ curl https://raw.githubusercontent.com/sunny/git-deploy/master/git-deploy.sh > ~/bin/git-deploy
+$ curl https://raw.githubusercontent.com/bdiallo/git-deploy/master/git-deploy.sh > ~/bin/git-deploy
 $ chmod +x ~/bin/git-deploy
 $ git config --global alias.deploy '!git-deploy'
 ```
@@ -37,7 +37,7 @@ Update
 ------
 
 ```sh
-$ curl https://raw.githubusercontent.com/sunny/git-deploy/master/git-deploy.sh > ~/bin/git-deploy
+$ curl https://raw.githubusercontent.com/bdiallo/git-deploy/master/git-deploy.sh > ~/bin/git-deploy
 ```
 
 Branches
